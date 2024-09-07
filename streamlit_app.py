@@ -1,24 +1,19 @@
 import streamlit as st
-from openai import OpenAI
+import requests
+import json
 
 # Show title and description.
 st.title("📄 Document question answering")
 st.write(
     "Upload a document below and ask a question about it – GPT will answer! "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
 )
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = st.text_input("OpenAI API Key", type="password")
-if not openai_api_key:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝️")
+# Read API key from Streamlit secrets.
+api_key = st.secrets["together"]["api_key"]
+
+if not api_key:
+    st.info("Please add your Together API key in secrets.", icon="🗝️")
 else:
-
-    # Create an OpenAI client.
-    client = OpenAI(api_key=openai_api_key)
-
     # Let the user upload a file via `st.file_uploader`.
     uploaded_file = st.file_uploader(
         "Upload a document (.txt or .md)", type=("txt", "md")
@@ -32,7 +27,6 @@ else:
     )
 
     if uploaded_file and question:
-
         # Process the uploaded file and question.
         document = uploaded_file.read().decode()
         messages = [
@@ -42,12 +36,37 @@ else:
             }
         ]
 
-        # Generate an answer using the OpenAI API.
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
+        # Prepare the payload for the Together API.
+        payload = {
+            "model": "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
+            "messages": messages,
+            "max_tokens": 2512,
+            "temperature": 0.7,
+            "top_p": 0.7,
+            "top_k": 50,
+            "repetition_penalty": 1,
+            "stop": ["\"\""],
+            "stream": True,
+        }
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        # Make a POST request to Together API.
+        response = requests.post(
+            "https://api.together.xyz/v1/chat/completions",
+            headers=headers,
+            data=json.dumps(payload),
             stream=True,
         )
 
-        # Stream the response to the app using `st.write_stream`.
-        st.write_stream(stream)
+        # Stream the response to the app.
+        if response.status_code == 200:
+            for line in response.iter_lines():
+                if line:
+                    decoded_line = line.decode("utf-8")
+                    st.write(decoded_line)
+        else:
+            st.error("Error: Unable to get a response from the Together API.")
