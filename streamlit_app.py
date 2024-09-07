@@ -42,7 +42,8 @@ else:
         disabled=not uploaded_file,
     )
 
-    if uploaded_file and question:
+    # Add a submit button
+    if st.button("Submit") and uploaded_file and question:
         # Process the uploaded file based on its type.
         if uploaded_file.name.endswith(".txt") or uploaded_file.name.endswith(".md"):
             document = uploaded_file.read().decode("utf-8")
@@ -75,7 +76,7 @@ else:
         payload = {
             "model": "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
             "messages": messages,
-            "max_tokens": 300,  # Reduce tokens to avoid hitting the limit
+            "max_tokens": 3000,  # Reduce tokens to avoid hitting the limit
             "temperature": 0.7,
             "top_p": 0.7,
             "top_k": 50,
