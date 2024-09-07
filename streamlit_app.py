@@ -69,18 +69,23 @@ else:
         }
 
         # Make a POST request to Together API.
-        response = requests.post(
-            "https://api.together.xyz/v1/chat/completions",
-            headers=headers,
-            data=json.dumps(payload),
-            stream=True,
-        )
+        try:
+            response = requests.post(
+                "https://api.together.xyz/v1/chat/completions",
+                headers=headers,
+                data=json.dumps(payload),
+                stream=True,
+            )
 
-        # Stream the response to the app.
-        if response.status_code == 200:
-            for line in response.iter_lines():
-                if line:
-                    decoded_line = line.decode("utf-8")
-                    st.write(decoded_line)
-        else:
-            st.error("Error: Unable to get a response from the Together API.")
+            # Stream the response to the app.
+            if response.status_code == 200:
+                st.write("Response from the model:")
+                for line in response.iter_lines():
+                    if line:
+                        decoded_line = json.loads(line.decode("utf-8"))
+                        if "choices" in decoded_line:
+                            st.write(decoded_line["choices"][0]["message"]["content"])
+            else:
+                st.error(f"Error {response.status_code}: Unable to get a response from the Together API.")
+        except Exception as e:
+            st.error(f"An error occurred: {e}")
