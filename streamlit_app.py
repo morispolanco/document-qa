@@ -54,13 +54,12 @@ else:
         payload = {
             "model": "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
             "messages": messages,
-            "max_tokens": 2512,
+            "max_tokens": 500,  # Reduce tokens for testing
             "temperature": 0.7,
             "top_p": 0.7,
             "top_k": 50,
             "repetition_penalty": 1,
-            "stop": ["\"\""],
-            "stream": True,
+            # Remove the stop parameter for now
         }
 
         headers = {
@@ -87,5 +86,6 @@ else:
                             st.write(decoded_line["choices"][0]["message"]["content"])
             else:
                 st.error(f"Error {response.status_code}: Unable to get a response from the Together API.")
+                st.error(response.text)  # Show detailed error message from the API
         except Exception as e:
             st.error(f"An error occurred: {e}")
