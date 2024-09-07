@@ -54,7 +54,7 @@ else:
         input_text = f"Here's a document: {document} \n\n---\n\n {question}"
 
         # Count tokens and trim if necessary
-        max_allowed_tokens = 8193 - 500  # Leave space for the new tokens
+        max_allowed_tokens = 8193 - 3000  # Leave space for the new tokens (3000 max_tokens)
         total_tokens = count_tokens(input_text)
 
         if total_tokens > max_allowed_tokens:
@@ -76,7 +76,7 @@ else:
         payload = {
             "model": "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
             "messages": messages,
-            "max_tokens": 3000,  # Reduce tokens to avoid hitting the limit
+            "max_tokens": 3000,  # Increased max_tokens to 3000
             "temperature": 0.7,
             "top_p": 0.7,
             "top_k": 50,
