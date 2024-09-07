@@ -38,7 +38,7 @@ else:
 
         # Prepare the payload for the Together API.
         payload = {
-            "model": "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
+            "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
             "messages": messages,
             "max_tokens": 2512,
             "temperature": 0.7,
