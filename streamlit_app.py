@@ -1,11 +1,21 @@
 import streamlit as st
 import requests
 import json
+from io import StringIO
+from docx import Document
+
+# Function to read a .docx file and extract text
+def read_docx(file):
+    doc = Document(file)
+    full_text = []
+    for para in doc.paragraphs:
+        full_text.append(para.text)
+    return "\n".join(full_text)
 
 # Show title and description.
 st.title("📄 Document question answering")
 st.write(
-    "Upload a document below and ask a question about it – GPT will answer! "
+    "Upload a document below and ask a question about it – GPT will answer!"
 )
 
 # Read API key from Streamlit secrets.
@@ -16,7 +26,7 @@ if not api_key:
 else:
     # Let the user upload a file via `st.file_uploader`.
     uploaded_file = st.file_uploader(
-        "Upload a document (.txt or .md)", type=("txt", "md")
+        "Upload a document (.txt, .md, or .docx)", type=("txt", "md", "docx")
     )
 
     # Ask the user for a question via `st.text_area`.
@@ -27,8 +37,12 @@ else:
     )
 
     if uploaded_file and question:
-        # Process the uploaded file and question.
-        document = uploaded_file.read().decode()
+        # Process the uploaded file based on its type.
+        if uploaded_file.name.endswith(".txt") or uploaded_file.name.endswith(".md"):
+            document = uploaded_file.read().decode("utf-8")
+        elif uploaded_file.name.endswith(".docx"):
+            document = read_docx(uploaded_file)
+
         messages = [
             {
                 "role": "user",
@@ -38,7 +52,7 @@ else:
 
         # Prepare the payload for the Together API.
         payload = {
-            "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+            "model": "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
             "messages": messages,
             "max_tokens": 2512,
             "temperature": 0.7,
