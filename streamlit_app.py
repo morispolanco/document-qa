@@ -3,6 +3,7 @@ import requests
 import json
 from io import StringIO
 from docx import Document
+import tiktoken  # Librería para contar tokens
 
 # Function to read a .docx file and extract text
 def read_docx(file):
@@ -11,6 +12,11 @@ def read_docx(file):
     for para in doc.paragraphs:
         full_text.append(para.text)
     return "\n".join(full_text)
+
+# Function to count tokens in a document (adjust according to model's tokenizer)
+def count_tokens(text, model="meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo"):
+    encoding = tiktoken.get_encoding("cl100k_base")  # Adjust encoding to model's tokenizer
+    return len(encoding.encode(text))
 
 # Show title and description.
 st.title("📄 Document question answering")
@@ -43,10 +49,25 @@ else:
         elif uploaded_file.name.endswith(".docx"):
             document = read_docx(uploaded_file)
 
+        # Concatenate the document and question
+        input_text = f"Here's a document: {document} \n\n---\n\n {question}"
+
+        # Count tokens and trim if necessary
+        max_allowed_tokens = 8193 - 500  # Leave space for the new tokens
+        total_tokens = count_tokens(input_text)
+
+        if total_tokens > max_allowed_tokens:
+            # Trim the document to fit within the token limit
+            st.warning(f"The document is too long. It will be truncated to fit the token limit.")
+            # Keep only the first part of the document that fits
+            truncated_text = input_text[:max_allowed_tokens]
+        else:
+            truncated_text = input_text
+
         messages = [
             {
                 "role": "user",
-                "content": f"Here's a document: {document} \n\n---\n\n {question}",
+                "content": truncated_text,
             }
         ]
 
@@ -54,12 +75,11 @@ else:
         payload = {
             "model": "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
             "messages": messages,
-            "max_tokens": 500,  # Reduce tokens for testing
+            "max_tokens": 300,  # Reduce tokens to avoid hitting the limit
             "temperature": 0.7,
             "top_p": 0.7,
             "top_k": 50,
             "repetition_penalty": 1,
-            # Remove the stop parameter for now
         }
 
         headers = {
